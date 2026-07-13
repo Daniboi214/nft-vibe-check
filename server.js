@@ -33,17 +33,17 @@ app.post('/vibe-check', async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Railway" });
     }
 
-    // OpenAI-compatible endpoint — this is the secret sauce that accepts AQ. keys perfectly!
+    // Official OpenAI compatibility endpoint
     const targetUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
     
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}` // AQ. keys require standard Bearer auth on this endpoint
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gemini-2.5-flash', // The OpenAI gateway maps this to the latest active engine
+        model: 'gemini-2.5-flash', // The universally active, fully compatible ID
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { 
@@ -54,18 +54,24 @@ app.post('/vibe-check', async (req, res) => {
             Links: ${links ? links.join(', ') : "not provided"}` 
           }
         ],
-        response_format: { type: "json_object" } // Enforce native JSON output at the gateway level
+        response_format: { type: "json_object" }
       })
     });
 
     const data = await apiResponse.json();
     
+    // Safely check if Google returned an error payload
     if (data.error) {
-      console.error("Google Endpoint Error:", data.error);
-      return res.status(400).json({ error: data.error.message });
+      console.error("Google AI Gateway Error:", data.error);
+      return res.status(400).json({ error: data.error.message || "Google endpoint rejected key or payload" });
     }
 
-    // Extract the raw text from the OpenAI response structure
+    // Safely verify if choices exists before parsing
+    if (!data.choices || data.choices.length === 0) {
+      console.error("Malformed API response (no choices array):", data);
+      return res.status(502).json({ error: "Empty or unexpected response from AI Gateway" });
+    }
+
     const rawText = data.choices[0].message.content.trim();
     const result = JSON.parse(rawText);
     return res.json(result);
@@ -78,5 +84,5 @@ app.post('/vibe-check', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`OpenAI-compatible Vibe Check active on port ${PORT}`);
+  console.log(`Vibe Check active on port ${PORT}`);
 });
