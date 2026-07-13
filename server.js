@@ -43,15 +43,15 @@ app.post('/vibe-check', async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Railway" });
     }
 
-    // Direct endpoint using v1beta (where 3.5-flash resides)
+   // Direct endpoint using v1beta (where 3.5-flash resides)
     const targetUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
     
-    // Authenticate using the Bearer token header instead of the URL string
+    // Authenticate using Google's official custom API Key header
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'x-goog-api-key': apiKey // Passes your AQ. key directly without "Bearer"
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: inputContent }] }]
