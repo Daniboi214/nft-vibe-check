@@ -27,34 +27,34 @@ app.post('/vibe-check', async (req, res) => {
       return res.status(400).json({ error: "project_name is required" });
     }
 
-    const inputContent = `
-      ${SYSTEM_PROMPT}
-      
-      Now, evaluate this project:
-      Project Name: ${project_name}
-      Description: ${description || "not provided"}
-      Links: ${links ? links.join(', ') : "not provided"}
-    `;
-
-    // Securely pull the key from Railway's environment variables
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Railway" });
     }
 
-   // Direct endpoint using v1beta (where 3.5-flash resides)
-    const targetUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+    // OpenAI-compatible endpoint — this is the secret sauce that accepts AQ. keys perfectly!
+    const targetUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
     
-    // Authenticate using Google's official custom API Key header
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey // Passes your AQ. key directly without "Bearer"
+        'Authorization': `Bearer ${apiKey}` // AQ. keys require standard Bearer auth on this endpoint
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: inputContent }] }]
+        model: 'gemini-2.5-flash', // The OpenAI gateway maps this to the latest active engine
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { 
+            role: 'user', 
+            content: `Evaluate this project:
+            Project Name: ${project_name}
+            Description: ${description || "not provided"}
+            Links: ${links ? links.join(', ') : "not provided"}` 
+          }
+        ],
+        response_format: { type: "json_object" } // Enforce native JSON output at the gateway level
       })
     });
 
@@ -65,14 +65,9 @@ app.post('/vibe-check', async (req, res) => {
       return res.status(400).json({ error: data.error.message });
     }
 
-    // Extract raw text response from Google's response payload
-    let rawText = data.candidates[0].content.parts[0].text.trim();
-    
-    // Remove markdown code fences if added
-    if (rawText.startsWith("```json")) rawText = rawText.substring(7);
-    if (rawText.endsWith("```")) rawText = rawText.substring(0, rawText.length - 3);
-
-    const result = JSON.parse(rawText.trim());
+    // Extract the raw text from the OpenAI response structure
+    const rawText = data.choices[0].message.content.trim();
+    const result = JSON.parse(rawText);
     return res.json(result);
 
   } catch (error) {
@@ -83,5 +78,5 @@ app.post('/vibe-check', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Direct API Vibe Check active on port ${PORT}`);
+  console.log(`OpenAI-compatible Vibe Check active on port ${PORT}`);
 });
