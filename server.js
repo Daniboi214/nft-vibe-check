@@ -4,9 +4,8 @@ import { GoogleGenAI, Type } from '@google/genai';
 const app = Express();
 app.use(Express.json());
 
-// Initialize the Gemini Client
-// It automatically looks for the GEMINI_API_KEY environment variable
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "temporary_key_for_testing" });
+// Initialize the Gemini Client with your live API Key
+const ai = new GoogleGenAI({ apiKey: "AIzaSyBlSfbQjMfQ9EoOHjXIlUXh_EX4SuRFdVY" });
 
 // Define the rigid JSON schema for the output
 const vibeCheckSchema = {
