@@ -62,11 +62,14 @@ app.post('/vibe-check', async (req, res) => {
       Links: ${links ? links.join(', ') : "not provided"}
     `;
 
+    // Fixed configuration parameters for the updated Gen AI SDK
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: inputContent,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }]
+        },
         responseMimeType: 'application/json',
         responseSchema: vibeCheckSchema,
         temperature: 0.7,
@@ -84,5 +87,5 @@ app.post('/vibe-check', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`NFT Vibe Check service running on port ${PORT}`);
+  console.log({ message: `NFT Vibe Check service active on port ${PORT}` });
 });
