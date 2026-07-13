@@ -1,11 +1,9 @@
 import Express from 'express';
-import { GoogleGenAI } from '@google/genai';
 
 const app = Express();
 app.use(Express.json());
 
-// Initialize the Gemini Client with your live API Key
-const ai = new GoogleGenAI({ apiKey: "AIzaSyBlSfbQjMfQ9EoOHjXIlUXh_EX4SuRFdVY" });
+const API_KEY = "AIzaSyBlSfbQjMfQ9EoOHjXIlUXh_EX4SuRFdVY";
 
 const SYSTEM_PROMPT = `
 You are an advanced on-chain NFT researcher and native Web3 collector. Your task is to evaluate incoming crypto/NFT project data and provide a raw, honest "vibe check" evaluation.
@@ -40,30 +38,41 @@ app.post('/vibe-check', async (req, res) => {
       Links: ${links ? links.join(', ') : "not provided"}
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: inputContent
+    // Talk directly to Google's API over the web, bypassing the broken SDK entirely
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    
+    const apiResponse = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: inputContent }] }]
+      })
     });
 
-    // Clean up any accidental markdown wrapper lines if the AI adds them
-    let cleanText = response.text.trim();
-    if (cleanText.startsWith("```json")) {
-      cleanText = cleanText.substring(7);
-    }
-    if (cleanText.endsWith("```")) {
-      cleanText = cleanText.substring(0, cleanText.length - 3);
+    const data = await apiResponse.json();
+    
+    if (data.error) {
+      console.error("Google Endpoint Error:", data.error);
+      return res.status(400).json({ error: data.error.message });
     }
 
-    const result = JSON.parse(cleanText.trim());
+    // Extract the raw text response from the raw Google structure
+    let rawText = data.candidates[0].content.parts[0].text.trim();
+    
+    // Clean up markdown syntax if the AI included it
+    if (rawText.startsWith("```json")) rawText = rawText.substring(7);
+    if (rawText.endsWith("```")) rawText = rawText.substring(0, rawText.length - 3);
+
+    const result = JSON.parse(rawText.trim());
     return res.json(result);
 
   } catch (error) {
-    console.error("Vibe Check Error:", error);
+    console.error("Direct Network Request Failure:", error);
     return res.status(500).json({ error: "internal server error during evaluation" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`NFT Vibe Check service active on port ${PORT}`);
+  console.log(`Direct API Vibe Check active on port ${PORT}`);
 });
