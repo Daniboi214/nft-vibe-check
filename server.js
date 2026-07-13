@@ -1,5 +1,5 @@
 import Express from 'express';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 const app = Express();
 app.use(Express.json());
@@ -7,45 +7,20 @@ app.use(Express.json());
 // Initialize the Gemini Client with your live API Key
 const ai = new GoogleGenAI({ apiKey: "AIzaSyBlSfbQjMfQ9EoOHjXIlUXh_EX4SuRFdVY" });
 
-// Define the rigid JSON schema for the output
-const vibeCheckSchema = {
-  type: Type.OBJECT,
-  properties: {
-    vibe_score: { 
-      type: Type.INTEGER, 
-      description: "a rough composite signal from 0 to 100 based on concept originality, clarity of mechanics, narrative strength, and collector appeal." 
-    },
-    vibe_label: { 
-      type: Type.STRING, 
-      description: "a short tag, 2-3 words max, describing the project state (e.g., 'genuine sleeper', 'hype-driven', 'mechanically interesting', 'thin concept')." 
-    },
-    collector_take: { 
-      type: Type.STRING, 
-      description: "2-4 sentences written entirely in lowercase, first-person collector voice. use cause-and-effect reasoning, natural hedges like 'i think' or 'honestly', and avoid generic AI filler or hype." 
-    },
-    flags: { 
-      type: Type.ARRAY, 
-      items: { type: Type.STRING },
-      description: "list of short strings highlighting potential risks, missing data, or things worth double-checking." 
-    }
-  },
-  required: ["vibe_score", "vibe_label", "collector_take", "flags"]
-};
-
 const SYSTEM_PROMPT = `
 You are an advanced on-chain NFT researcher and native Web3 collector. Your task is to evaluate incoming crypto/NFT project data and provide a raw, honest "vibe check" evaluation.
 
-CRITICAL STYLISTIC DIRECTIVES:
-1. Tone: Writing must be entirely lowercase. Use a calm, analytical, conversational tone.
-2. Voice: Speak from the perspective of an experienced individual collector (first person: "i think", "honestly", "i'm looking at"). 
-3. Logic: Focus on cause-and-effect reasoning. Explain WHY a mechanic or art style works or fails.
-4. Bans: Strictly avoid generic AI filler, balanced parallel sentence structures, and hollow marketing hype. Do not use overused CT slang (like "gmi", "to the moon", "lfg"). Keep it grounded. Use concrete specifics over vague commentary.
+You MUST respond ONLY with a single, valid JSON object containing exactly these four keys. Do not include any markdown backticks, markdown formatting, or introductory text. Just the raw JSON object.
 
-SCORING RUBRIC (0-100):
-- 90-100: Exceptional originality, airtight mechanics (clear supply, smart distribution, sustainable royalties), strong core narrative, and clear collector appeal.
-- 70-89: Solid project with real potential, but has slight friction (e.g., derivative aesthetic elements, unproven team, or missing minor details).
-- 40-69: Average, uninspired, or highly derivative. Feels like a generic PFP copycat or a "thin concept" that relies purely on temporary hype.
-- 0-39: High-risk, broken links, completely opaque mechanics, or clear red flags.
+JSON Keys Required:
+1. "vibe_score": (Integer from 0 to 100) based on concept originality, mechanics, and collector appeal.
+2. "vibe_label": (String, 2-3 words max) describing the project state (e.g., "genuine sleeper", "hype-driven", "thin concept").
+3. "collector_take": (String) 2-4 sentences written entirely in lowercase, first-person collector voice (using "i think", "honestly"). Avoid generic AI filler or hype.
+4. "flags": (Array of strings) short phrases highlighting potential risks or missing details.
+
+CRITICAL STYLISTIC DIRECTIVES:
+- Everything in the "collector_take" text must be lowercase.
+- Keep it grounded like an individual Discord/Alpha group analyst.
 `;
 
 app.post('/vibe-check', async (req, res) => {
@@ -57,26 +32,29 @@ app.post('/vibe-check', async (req, res) => {
     }
 
     const inputContent = `
+      ${SYSTEM_PROMPT}
+      
+      Now, evaluate this project:
       Project Name: ${project_name}
       Description: ${description || "not provided"}
       Links: ${links ? links.join(', ') : "not provided"}
     `;
 
-    // Fixed configuration parameters for the updated Gen AI SDK
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
-      contents: inputContent,
-      config: {
-        systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT }]
-        },
-        responseMimeType: 'application/json',
-        responseSchema: vibeCheckSchema,
-        temperature: 0.7,
-      }
+      contents: inputContent
     });
 
-    const result = JSON.parse(response.text);
+    // Clean up any accidental markdown wrapper lines if the AI adds them
+    let cleanText = response.text.trim();
+    if (cleanText.startsWith("```json")) {
+      cleanText = cleanText.substring(7);
+    }
+    if (cleanText.endsWith("```")) {
+      cleanText = cleanText.substring(0, cleanText.length - 3);
+    }
+
+    const result = JSON.parse(cleanText.trim());
     return res.json(result);
 
   } catch (error) {
@@ -87,5 +65,5 @@ app.post('/vibe-check', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log({ message: `NFT Vibe Check service active on port ${PORT}` });
+  console.log(`NFT Vibe Check service active on port ${PORT}`);
 });
