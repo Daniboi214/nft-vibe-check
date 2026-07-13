@@ -3,8 +3,6 @@ import Express from 'express';
 const app = Express();
 app.use(Express.json());
 
-const API_KEY = process.env.GEMINI_API_KEY;
-
 const SYSTEM_PROMPT = `
 You are an advanced on-chain NFT researcher and native Web3 collector. Your task is to evaluate incoming crypto/NFT project data and provide a raw, honest "vibe check" evaluation.
 
@@ -38,12 +36,23 @@ app.post('/vibe-check', async (req, res) => {
       Links: ${links ? links.join(', ') : "not provided"}
     `;
 
-    // Talk directly to Google's API over the web, bypassing the broken SDK entirely
-    const targetUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+    // Securely pull the key from Railway's environment variables
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Railway" });
+    }
+
+    // Direct endpoint using v1beta (where 3.5-flash resides)
+    const targetUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
     
+    // Authenticate using the Bearer token header instead of the URL string
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
         contents: [{ parts: [{ text: inputContent }] }]
       })
@@ -56,10 +65,10 @@ app.post('/vibe-check', async (req, res) => {
       return res.status(400).json({ error: data.error.message });
     }
 
-    // Extract the raw text response from the raw Google structure
+    // Extract raw text response from Google's response payload
     let rawText = data.candidates[0].content.parts[0].text.trim();
     
-    // Clean up markdown syntax if the AI included it
+    // Remove markdown code fences if added
     if (rawText.startsWith("```json")) rawText = rawText.substring(7);
     if (rawText.endsWith("```")) rawText = rawText.substring(0, rawText.length - 3);
 
@@ -67,7 +76,7 @@ app.post('/vibe-check', async (req, res) => {
     return res.json(result);
 
   } catch (error) {
-    console.error("Direct Network Request Failure:", error);
+    console.error("Network Request Failure:", error);
     return res.status(500).json({ error: "internal server error during evaluation" });
   }
 });
