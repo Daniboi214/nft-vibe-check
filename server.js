@@ -34,8 +34,7 @@ app.post('/vibe-check', async (req, res) => {
     }
 
     // The foolproof method: Native endpoint with the key strictly inside the URL string
-    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: { 
