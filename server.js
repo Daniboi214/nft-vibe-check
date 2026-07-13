@@ -39,7 +39,7 @@ app.post('/vibe-check', async (req, res) => {
     `;
 
     // Talk directly to Google's API over the web, bypassing the broken SDK entirely
-    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const targetUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
     
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
