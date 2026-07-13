@@ -3,7 +3,7 @@ import Express from 'express';
 const app = Express();
 app.use(Express.json());
 
-const API_KEY = "AIzaSyBlSfbQjMfQ9EoOHjXIlUXh_EX4SuRFdVY";
+const API_KEY = process.env.GEMINI_API_KEY;
 
 const SYSTEM_PROMPT = `
 You are an advanced on-chain NFT researcher and native Web3 collector. Your task is to evaluate incoming crypto/NFT project data and provide a raw, honest "vibe check" evaluation.
