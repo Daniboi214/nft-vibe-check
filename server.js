@@ -33,56 +33,56 @@ app.post('/vibe-check', async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Railway" });
     }
 
-    // Official OpenAI compatibility endpoint
-    const targetUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    // The foolproof method: Native endpoint with the key strictly inside the URL string
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     const apiResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
+        // We explicitly DO NOT include an 'Authorization' header to avoid the OAuth trap
       },
       body: JSON.stringify({
-        model: 'gemini-2.5-flash', // The universally active, fully compatible ID
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }]
+        },
+        contents: [
           { 
-            role: 'user', 
-            content: `Evaluate this project:
-            Project Name: ${project_name}
-            Description: ${description || "not provided"}
-            Links: ${links ? links.join(', ') : "not provided"}` 
+            role: "user",
+            parts: [{ text: `Evaluate this project:\nProject Name: ${project_name}\nDescription: ${description || "not provided"}\nLinks: ${links ? links.join(', ') : "not provided"}` }]
           }
         ],
-        response_format: { type: "json_object" }
+        generationConfig: {
+          responseMimeType: "application/json" // Forces Gemini to always return strict JSON
+        }
       })
     });
 
     const data = await apiResponse.json();
     
-    // Safely check if Google returned an error payload
+    // Safely check if Google rejected the request
     if (data.error) {
-      console.error("Google AI Gateway Error:", data.error);
-      return res.status(400).json({ error: data.error.message || "Google endpoint rejected key or payload" });
+      console.error("Google API Error:", data.error);
+      return res.status(400).json({ error: data.error.message || "Google endpoint rejected the request" });
     }
 
-    // Safely verify if choices exists before parsing
-    if (!data.choices || data.choices.length === 0) {
-      console.error("Malformed API response (no choices array):", data);
-      return res.status(502).json({ error: "Empty or unexpected response from AI Gateway" });
+    // Safely check if the response is valid
+    if (!data.candidates || data.candidates.length === 0) {
+      return res.status(502).json({ error: "Empty response from Gemini API" });
     }
 
-    const rawText = data.choices[0].message.content.trim();
+    // Extract JSON from the native Gemini response structure
+    const rawText = data.candidates[0].content.parts[0].text.trim();
     const result = JSON.parse(rawText);
     return res.json(result);
 
   } catch (error) {
-    console.error("Network Request Failure:", error);
+    console.error("Evaluation Error:", error);
     return res.status(500).json({ error: "internal server error during evaluation" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Vibe Check active on port ${PORT}`);
+  console.log(`Native Vibe Check active on port ${PORT}`);
 });
