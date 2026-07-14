@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 
 // 2. Explicitly handle the OPTIONS preflight requests for all routes
-app.options('*', cors());
+app.options('/vibe-check', cors());
 
 // 3. Parse incoming JSON requests
 app.use(express.json());
