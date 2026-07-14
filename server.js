@@ -1,3 +1,14 @@
+const express = require('express');
+const cors = require('cors'); // <--- 1. ADD THIS
+const { GoogleGenAI } = require('@google/genai');
+
+const app = express();
+
+app.use(cors()); // <--- 2. ADD THIS
+app.use(express.json());
+
+// ... the rest of your /vibe-check code stays exactly the same
+
 import Express from 'express';
 
 const app = Express();
