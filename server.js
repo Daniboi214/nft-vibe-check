@@ -41,7 +41,7 @@ Return a JSON object with EXACTLY the following four keys:
 `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: 'gemini-2.5-flash',
             contents: prompt,
         });
 
