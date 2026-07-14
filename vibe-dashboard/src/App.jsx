@@ -19,6 +19,7 @@ function App() {
       setResult(data)
     } catch (err) {
       console.error(err)
+      setResult({ error: "Frontend Network Error", details: err.message })
     }
     setLoading(false)
   }
@@ -52,7 +53,17 @@ function App() {
         </button>
       </div>
 
-      {result && (
+      {/* ERROR STATE UI */}
+      {result && result.error && (
+        <div className="bg-red-950/50 p-6 rounded-lg border border-red-500/50 shadow-2xl">
+          <h2 className="text-red-400 font-bold mb-2">⚠️ ENGINE ERROR</h2>
+          <p className="text-white">{result.error}</p>
+          <p className="text-slate-400 text-sm mt-2">{result.details}</p>
+        </div>
+      )}
+
+      {/* SUCCESS STATE UI */}
+      {result && !result.error && (
         <div className="bg-slate-900 p-6 rounded-lg border border-green-500/30 shadow-2xl">
           <div className="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
             <div>
@@ -73,7 +84,7 @@ function App() {
           <div>
             <h3 className="text-red-400 text-sm mb-2">{"// RISK FLAGS DETECTED"}</h3>
             <ul className="space-y-2">
-              {result.flags.map((flag, i) => (
+              {result.flags?.map((flag, i) => (
                 <li key={i} className="bg-red-950/30 text-red-300 p-2 rounded text-sm border border-red-900/50">
                   ⚠️ {flag}
                 </li>
