@@ -1,13 +1,13 @@
-const express = require('express');
-const cors = require('cors');
-const { GoogleGenAI } = require('@google/genai');
+import express from 'express';
+import cors from 'cors';
+import { GoogleGenAI } from '@google/genai';
 
 const app = express();
 
 // 1. Enable standard CORS for all routes
 app.use(cors());
 
-// 2. Explicitly handle the OPTIONS preflight requests for all routes (Fixes the browser error)
+// 2. Explicitly handle the OPTIONS preflight requests for all routes
 app.options('*', cors());
 
 // 3. Parse incoming JSON requests
