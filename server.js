@@ -1,98 +1,69 @@
 const express = require('express');
-const cors = require('cors'); // <--- 1. ADD THIS
+const cors = require('cors');
 const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
 
-app.use(cors()); // <--- 2. ADD THIS
+// 1. Enable standard CORS for all routes
+app.use(cors());
+
+// 2. Explicitly handle the OPTIONS preflight requests for all routes (Fixes the browser error)
+app.options('*', cors());
+
+// 3. Parse incoming JSON requests
 app.use(express.json());
 
-// ... the rest of your /vibe-check code stays exactly the same
-
-import Express from 'express';
-
-const app = Express();
-app.use(Express.json());
-
-const SYSTEM_PROMPT = `
-You are an advanced on-chain NFT researcher and native Web3 collector. Your task is to evaluate incoming crypto/NFT project data and provide a raw, honest "vibe check" evaluation.
-
-You MUST respond ONLY with a single, valid JSON object containing exactly these four keys. Do not include any markdown backticks, markdown formatting, or introductory text. Just the raw JSON object.
-
-JSON Keys Required:
-1. "vibe_score": (Integer from 0 to 100) based on concept originality, mechanics, and collector appeal.
-2. "vibe_label": (String, 2-3 words max) describing the project state (e.g., "genuine sleeper", "hype-driven", "thin concept").
-3. "collector_take": (String) 2-4 sentences written entirely in lowercase, first-person collector voice (using "i think", "honestly"). Avoid generic AI filler or hype.
-4. "flags": (Array of strings) short phrases highlighting potential risks or missing details.
-
-CRITICAL STYLISTIC DIRECTIVES:
-- Everything in the "collector_take" text must be lowercase.
-- Keep it grounded like an individual Discord/Alpha group analyst.
-`;
+// Initialize the Google Gen AI client using your environment variable
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/vibe-check', async (req, res) => {
-  try {
-    const { project_name, description, links } = req.body;
+    try {
+        const { project_name, description } = req.body;
 
-    if (!project_name) {
-      return res.status(400).json({ error: "project_name is required" });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Railway" });
-    }
-
-    // The foolproof method: Native endpoint with the key strictly inside the URL string
-    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
-    const apiResponse = await fetch(targetUrl, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-        // We explicitly DO NOT include an 'Authorization' header to avoid the OAuth trap
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT }]
-        },
-        contents: [
-          { 
-            role: "user",
-            parts: [{ text: `Evaluate this project:\nProject Name: ${project_name}\nDescription: ${description || "not provided"}\nLinks: ${links ? links.join(', ') : "not provided"}` }]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json" // Forces Gemini to always return strict JSON
+        if (!project_name || !description) {
+            return res.status(400).json({ error: "Missing project_name or description in the request body." });
         }
-      })
-    });
 
-    const data = await apiResponse.json();
-    
-    // Safely check if Google rejected the request
-    if (data.error) {
-      console.error("Google API Error:", data.error);
-      return res.status(400).json({ error: data.error.message || "Google endpoint rejected the request" });
+        const prompt = `
+You are a brutal, highly analytical Web3 Alpha Group Analyst. Your job is to analyze the following crypto/NFT project and provide a "Vibe Check" risk assessment.
+You must return your assessment EXCLUSIVELY as a valid JSON object. Do not include markdown formatting, backticks, or any other text.
+
+Project Name: ${project_name}
+Description: ${description}
+
+Analyze the smart contract mechanics, tokenomics, lore, and team structure described. Look for red flags like: impossible APY, rugs, anonymous teams, auto-burns, or overpromises. Look for green flags like: real-world utility, audits, and sustainable yield.
+
+Return a JSON object with EXACTLY the following four keys:
+- "vibe_score": A number from 0 to 100 (100 being extremely safe, 0 being a guaranteed scam).
+- "vibe_label": A string classification (choose exactly one: "ESTABLISHED", "EMERGING", "UNPROVEN", or "HIGH RISK").
+- "collector_take": A 2-3 sentence brutally honest, insider "alpha group" take on the project.
+- "flags": An array of strings, where each string is a specific security/market risk red flag detected (if it's safe, return an empty array or positive notes).
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.5-flash',
+            contents: prompt,
+        });
+
+        // Clean up any markdown blocks (e.g., ```json ... ```) the model might return to prevent parsing errors
+        let cleanJson = response.text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+        
+        const resultData = JSON.parse(cleanJson);
+        
+        // Send the structured JSON back to your React frontend
+        res.json(resultData);
+
+    } catch (error) {
+        console.error("Vibe Check Error:", error);
+        res.status(500).json({ 
+            error: "Failed to process the on-chain vibe check.",
+            details: error.message 
+        });
     }
-
-    // Safely check if the response is valid
-    if (!data.candidates || data.candidates.length === 0) {
-      return res.status(502).json({ error: "Empty response from Gemini API" });
-    }
-
-    // Extract JSON from the native Gemini response structure
-    const rawText = data.candidates[0].content.parts[0].text.trim();
-    const result = JSON.parse(rawText);
-    return res.json(result);
-
-  } catch (error) {
-    console.error("Evaluation Error:", error);
-    return res.status(500).json({ error: "internal server error during evaluation" });
-  }
 });
 
+// Railway injects a PORT environment variable automatically. Fallback to 3000 for local testing.
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Native Vibe Check active on port ${PORT}`);
+    console.log(`Vibe Check engine is live and listening on port ${PORT}`);
 });
