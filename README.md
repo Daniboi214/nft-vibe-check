@@ -3,7 +3,7 @@
 
 Pulse is a sleek, AI-powered terminal designed to cut through the noise of the Web3 space. By combining live on-chain data with strictly deterministic LLM analysis, Pulse delivers instant, objective evaluations of NFT collections to help traders manage risk without the emotion.
 
-### 🔗 [Live Demo](https://nft-vibe-check-5vgc.vercel.app)
+### 🔗 [Live Demo](https://nft-vibe-check-5vgc.vercel.app/)
 
 ---
 
@@ -20,4 +20,18 @@ Pulse is a sleek, AI-powered terminal designed to cut through the noise of the W
 - **Data Layer:** OpenSea API 
 - **Hosting:** Vercel (Unified Serverless Deployment)
 
-  
+## 🚀 How to Run Locally
+Run the following commands in your terminal to clone the project, install all dependencies, set up your environment variables, and start the app:
+```bash
+git clone INSERT_YOUR_GITHUB_REPO_URL_HERE
+cd your-folder-name
+npm install
+echo "GROQ_API_KEY=your_groq_api_key" > .env
+echo "OPENSEA_API_KEY=your_opensea_api_key" >> .env
+npm start
+
+
+
+echo "GROQ_API_KEY=your_groq_api_key" > .env
+echo "OPENSEA_API_KEY=your_opensea_api_key" >> .env
+npm start
