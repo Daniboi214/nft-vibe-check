@@ -34,7 +34,7 @@ function App() {
           <input 
             value={slug} onChange={(e) => setSlug(e.target.value)}
             className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white outline-none focus:border-green-400"
-            placeholder="e.g. pudgypenguins"
+            placeholder="e.g. pudgypenguins, or paste OpenSea URL"
           />
         </div>
         <button 
