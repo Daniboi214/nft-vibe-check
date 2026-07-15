@@ -32,7 +32,7 @@ app.post('/vibe-check', async (req, res) => {
         const osData = await osResponse.json();
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+        const ai = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const prompt = `
             You are a professional Web3 Quantitative Analyst providing institutional-grade research. Analyze this NFT project:
