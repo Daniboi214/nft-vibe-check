@@ -48,13 +48,14 @@ app.post('/vibe-check', async (req, res) => {
             "collector_take": A detailed 4 to 5 sentence objective analysis. Evaluate what the project offers, its thematic or technical focus, and its apparent goals. Keep the language clear, descriptive, and strictly analytical.
             "flags": an array of exactly 4 objective observations regarding the project's traits, roadmap, or available data (e.g., "Clear utility outlined", "Description lacks specific details", "Strong focus on generative art", "Community roadmap specified").
         `;
-        
+
         const completion = await groq.chat.completions.create({
             messages: [{ 
                 role: "user", 
                 content: prompt 
             }],
             model: "llama-3.1-8b-instant",
+            temperature: 0, // Forces the AI to give consistent, identical scores for the same collection
             response_format: { type: "json_object" }
         });
 
