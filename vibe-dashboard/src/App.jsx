@@ -9,8 +9,8 @@ function App() {
     setLoading(true)
     setResult(null)
     try {
-      // Make sure this URL matches your Railway backend exactly
-      const response = await fetch('YOUR_RAILWAY_URL_HERE/vibe-check', {
+      // REPLACE 'YOUR_RAILWAY_URL_HERE' WITH YOUR ACTUAL URL!
+      const response = await fetch('fabulous-alignment-production-1016.up.railway.app/vibe-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ collection_slug: slug })
