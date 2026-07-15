@@ -10,26 +10,33 @@ app.use(express.json());
 
 app.post('/vibe-check', async (req, res) => {
     try {
-        // 1. Safe Check for API Keys before doing anything
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ error: "Server missing GEMINI_API_KEY" });
-        }
-        if (!process.env.OPENSEA_API_KEY) {
-            return res.status(500).json({ error: "Server missing OPENSEA_API_KEY" });
+        if (!process.env.GEMINI_API_KEY || !process.env.OPENSEA_API_KEY) {
+            return res.status(500).json({ error: "Server missing API Keys" });
         }
 
-        const { collection_slug } = req.body;
-        if (!collection_slug) return res.status(400).json({ error: "Missing collection_slug" });
+        let rawInput = req.body.collection_slug;
+        if (!rawInput) return res.status(400).json({ error: "Missing collection input" });
 
-        // 2. Fetch OpenSea Data
-        const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${collection_slug}`, {
+        // --- THE INPUT CLEANER ---
+        let finalSlug = rawInput.trim();
+        
+        // If they pasted a full OpenSea URL, extract just the slug
+        if (finalSlug.includes('opensea.io/collection/')) {
+            finalSlug = finalSlug.split('opensea.io/collection/')[1].split('/')[0].split('?')[0];
+        } else {
+            // If they typed a name with spaces, convert it to a standard slug format
+            finalSlug = finalSlug.toLowerCase().replace(/\s+/g, '-');
+        }
+        // -------------------------
+
+        // Fetch OpenSea Data using the cleaned slug
+        const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${finalSlug}`, {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
         });
 
-        if (!osResponse.ok) return res.status(404).json({ error: "Collection not found on OpenSea" });
+        if (!osResponse.ok) return res.status(404).json({ error: `Collection not found on OpenSea. Tried searching for: ${finalSlug}` });
         const osData = await osResponse.json();
 
-        // 3. Initialize AI only when a request comes in
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
