@@ -19,17 +19,13 @@ app.post('/vibe-check', async (req, res) => {
 
         // --- THE INPUT CLEANER ---
         let finalSlug = rawInput.trim();
-        
-        // If they pasted a full OpenSea URL, extract just the slug
         if (finalSlug.includes('opensea.io/collection/')) {
             finalSlug = finalSlug.split('opensea.io/collection/')[1].split('/')[0].split('?')[0];
         } else {
-            // If they typed a name with spaces, convert it to a standard slug format
             finalSlug = finalSlug.toLowerCase().replace(/\s+/g, '-');
         }
         // -------------------------
 
-        // Fetch OpenSea Data using the cleaned slug
         const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${finalSlug}`, {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
         });
@@ -40,13 +36,17 @@ app.post('/vibe-check', async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
+        // --- THE PROFESSIONAL PROMPT ---
         const prompt = `
-            You are a brutal Web3 Alpha Group Analyst. Analyze this project:
+            You are a professional Web3 Quantitative Analyst providing institutional-grade research. Analyze this NFT project:
             Name: ${osData.name}
             Description: ${osData.description}
             
             Return ONLY a JSON object with these keys: 
-            "vibe_score" (0-100), "vibe_label", "collector_take" (2 sentences), "flags" (array of strings).
+            "vibe_score" (0-100, representing overall market health, utility, and fundamentals), 
+            "vibe_label" (e.g., "Strong Fundamentals", "High Risk", "Speculative", "Established Blue-Chip"), 
+            "collector_take" (2 sentences of objective, professional analysis regarding its market positioning and long-term viability), 
+            "flags" (array of strings highlighting potential risks, liquidity concerns, or positive technical indicators).
             Do not include markdown or backticks.
         `;
 
