@@ -17,14 +17,12 @@ app.post('/vibe-check', async (req, res) => {
         let rawInput = req.body.collection_slug;
         if (!rawInput) return res.status(400).json({ error: "Missing collection input" });
 
-        // --- THE INPUT CLEANER ---
         let finalSlug = rawInput.trim();
         if (finalSlug.includes('opensea.io/collection/')) {
             finalSlug = finalSlug.split('opensea.io/collection/')[1].split('/')[0].split('?')[0];
         } else {
             finalSlug = finalSlug.toLowerCase().replace(/\s+/g, '-');
         }
-        // -------------------------
 
         const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${finalSlug}`, {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
@@ -36,7 +34,6 @@ app.post('/vibe-check', async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
-        // --- THE PROFESSIONAL PROMPT ---
         const prompt = `
             You are a professional Web3 Quantitative Analyst providing institutional-grade research. Analyze this NFT project:
             Name: ${osData.name}
@@ -58,6 +55,15 @@ app.post('/vibe-check', async (req, res) => {
 
     } catch (error) {
         console.error("Backend Error:", error);
+        
+        // Gracefully handle Gemini 503 Overload Errors
+        if (error.status === 503 || (error.message && error.message.includes('503'))) {
+            return res.status(503).json({ 
+                error: "The AI analysis engine is currently experiencing a high volume of requests. Please try again in a few moments." 
+            });
+        }
+
+        // Generic error fallback
         res.status(500).json({ error: "Failed to process check", details: error.message });
     }
 });
