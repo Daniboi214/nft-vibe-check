@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,7 +12,7 @@ app.post('/vibe-check', async (req, res) => {
     let collectionNameForFallback = "Unknown Collection";
 
     try {
-        if (!process.env.GEMINI_API_KEY || !process.env.OPENSEA_API_KEY) {
+        if (!process.env.GROQ_API_KEY || !process.env.OPENSEA_API_KEY) {
             return res.status(500).json({ error: "Server missing API Keys" });
         }
 
@@ -34,42 +34,39 @@ app.post('/vibe-check', async (req, res) => {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
         });
 
-        if (!osResponse.ok) return res.status(404).json({ error: `Collection not found on OpenSea. Tried searching for: ${finalSlug}` });
+        if (!osResponse.ok) return res.status(404).json({ error: `Collection not found on OpenSea.` });
         
         const osData = await osResponse.json(); 
         if (osData.name) collectionNameForFallback = osData.name;
 
-        // Initialize AI strictly enforcing JSON mode to prevent parser crashes
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const ai = genAI.getGenerativeModel({ 
-            model: 'gemini-1.5-flash',
-            generationConfig: { responseMimeType: "application/json" }
-        });
-
+        // --- NEW GROQ AI ENGINE ---
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        
         const prompt = `
             You are a professional Web3 Quantitative Analyst providing institutional-grade research. Analyze this NFT project:
             Name: ${osData.name || finalSlug}
             Description: ${osData.description || 'No description'}
             
-            Return ONLY a valid JSON object with exactly these keys: 
+            Return a JSON object with EXACTLY these keys: 
             "vibe_score" (number from 0-100), 
             "vibe_label" (string), 
             "collector_take" (string, 2 sentences of analysis), 
             "flags" (array of strings).
         `;
 
-        const result = await ai.generateContent(prompt);
-        const responseText = result.response.text();
-        
-        // Clean parse without needing regex hacks
-        const resultData = JSON.parse(responseText);
-        
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama3-8b-8192", // Lightning fast, highly capable model
+            response_format: { type: "json_object" } // Strictly forces JSON
+        });
+
+        const resultData = JSON.parse(completion.choices[0].message.content);
         return res.json(resultData);
 
     } catch (error) {
-        console.error("Backend AI Error Caught. Initiating Dynamic Mock...", error.message);
+        console.error("Backend Error Caught. Initiating Dynamic Mock...", error.message);
         
-        // Dynamic Fallback generation based on the collection name
+        // The fallback is still here just in case OpenSea times out
         let hash = 0;
         for (let i = 0; i < collectionNameForFallback.length; i++) {
             hash = collectionNameForFallback.charCodeAt(i) + ((hash << 5) - hash);
