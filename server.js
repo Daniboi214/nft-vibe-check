@@ -30,23 +30,25 @@ app.post('/vibe-check', async (req, res) => {
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         
         const prompt = `
-            You are an optimistic and insightful Web3 community analyst. Review this NFT project and provide a thoughtful, detailed, and positive analysis of its vision, art, and community potential in simple, everyday English. 
+            Analyze the following NFT project based on its provided details. Provide an objective, detailed, and balanced assessment of its features, utility, and creative direction. 
 
             IMPORTANT RULES: 
-            - Write a detailed and engaging review. Do not be too brief.
-            - Focus heavily on the positive aspects, creative vision, and potential utility. Frame any missing information constructively.
-            - Do not make price predictions or use confusing financial jargon.
+            - Do not adopt a persona. Do not use first-person pronouns (I, we, my).
+            - Do not make price predictions or give financial advice.
+            - Maintain a strictly objective and neutral tone. State facts and observations clearly.
+            - Avoid overly harsh criticism; if data is missing, simply state it as an area requiring more clarity.
+            - Provide a thorough analysis. Do not be brief.
 
             Project Name: ${osData.name || finalSlug}
             Description: ${osData.description || 'No description provided.'}
             
             Return ONLY a valid JSON object with EXACTLY these keys: 
-            "vibe_score": a number from 0-100 rating the overall quality, creativity, and community appeal of the project (lean towards fair, encouraging scores).
-            "vibe_label": a short, encouraging label (e.g., "Great Community Focus", "Creative Vision", "Solid Potential", "Awesome Art Style").
-            "collector_take": A detailed, 4 to 5 sentence engaging paragraph. Thoroughly explain the project's unique appeal, what makes it interesting, and why a collector would enjoy being part of this community. Keep the grammar natural and easy to read.
-            "flags": an array of exactly 4 short, mostly positive or neutral strings highlighting specific features (e.g., "Strong creative direction", "Focuses on community building", "Accessible to new collectors").
+            "vibe_score": an integer from 0-100 reflecting the project's overall development, clarity of purpose, and available features based on the description.
+            "vibe_label": a concise, objective label (e.g., "Established Ecosystem", "Art-Focused Collection", "Developing Utility", "Unclear Scope").
+            "collector_take": A detailed 4 to 5 sentence objective analysis. Evaluate what the project offers, its thematic or technical focus, and its apparent goals. Keep the language clear, descriptive, and strictly analytical.
+            "flags": an array of exactly 4 objective observations regarding the project's traits, roadmap, or available data (e.g., "Clear utility outlined", "Description lacks specific details", "Strong focus on generative art", "Community roadmap specified").
         `;
-
+        
         const completion = await groq.chat.completions.create({
             messages: [{ 
                 role: "user", 
