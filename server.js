@@ -30,15 +30,21 @@ app.post('/vibe-check', async (req, res) => {
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         
         const prompt = `
-            You are a Lead Quantitative Web3 Analyst at an institutional crypto fund. Execute a rigorous, highly technical market analysis of this NFT project:
-            Project Name: ${osData.name || finalSlug}
-            On-Chain Data/Description: ${osData.description || 'No metadata provided.'}
+            You are a helpful and honest NFT reviewer. Look at the details of this NFT project and explain what is good and what might be risky about it in simple, everyday English. 
             
-            Return a JSON object with EXACTLY these keys: 
-            "vibe_score": an integer from 0-100 reflecting risk-adjusted market positioning, underlying contract utility, and liquidity depth.
-            "vibe_label": a technical categorization (e.g., "High-Conviction Blue-Chip", "Speculative Mid-Cap", "Illiquid Risk Asset").
-            "collector_take": a comprehensive 4 to 5 sentence institutional thesis. Analyze floor volatility, volume velocity, tokenomics, and long-term viability using advanced crypto trading terminology. Do not use generic buzzwords; sound like a professional quant.
-            "flags": an array of exactly 4 strings highlighting specific technical market indicators, bid/ask depth, or smart contract risk vectors.
+            IMPORTANT RULES: 
+            - Do not make price predictions.
+            - Do not use confusing financial jargon.
+            - Focus only on the quality, safety, and utility of the project based on its description.
+
+            Project Name: ${osData.name || finalSlug}
+            Description: ${osData.description || 'No description provided.'}
+            
+            Return ONLY a valid JSON object with EXACTLY these keys: 
+            "vibe_score": a number from 0-100 rating the overall quality and trustworthiness of the project.
+            "vibe_label": a short, simple label (e.g., "Looks Solid", "A Bit Risky", "Needs More Info", "Established Project").
+            "collector_take": a 2 to 3 sentence simple summary of the project's pros and cons. Explain what the project is trying to do and if it seems reliable, using plain words.
+            "flags": an array of 3 or 4 short strings highlighting simple observations (e.g., "Clear roadmap", "No description available", "Standard art project", "Strong community focus").
         `;
 
         const completion = await groq.chat.completions.create({
