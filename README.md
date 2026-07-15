@@ -30,8 +30,3 @@ echo "GROQ_API_KEY=your_groq_api_key" > .env
 echo "OPENSEA_API_KEY=your_opensea_api_key" >> .env
 npm start
 
-
-
-echo "GROQ_API_KEY=your_groq_api_key" > .env
-echo "OPENSEA_API_KEY=your_opensea_api_key" >> .env
-npm start
