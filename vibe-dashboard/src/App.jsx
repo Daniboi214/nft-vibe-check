@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 
-// --- YOUR BACKEND URL ---
-// Use this if your backend is still on Railway
+// --- YOUR LIVE RAILWAY BACKEND ---
 const API_URL = 'https://fabulous-alignment-production-1016.up.railway.app/vibe-check'; 
 
 function App() {
@@ -46,7 +45,8 @@ function App() {
   };
 
   return (
-    <div className="header">
+    <div className="container">
+      <div className="header">
         <h1>PULSE<span style={{ color: '#3b82f6' }}>.</span></h1>
         <p>INSTITUTIONAL ON-CHAIN ANALYSIS</p>
       </div>
