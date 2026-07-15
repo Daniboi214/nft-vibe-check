@@ -46,9 +46,8 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <div className="header">
-        <h1>AURA<span>//</span>TERMINAL</h1>
+    <div className="header">
+        <h1>PULSE<span style={{ color: '#3b82f6' }}>.</span></h1>
         <p>INSTITUTIONAL ON-CHAIN ANALYSIS</p>
       </div>
 
