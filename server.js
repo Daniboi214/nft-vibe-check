@@ -5,27 +5,33 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const app = express();
 const port = process.env.PORT || 3000;
 
-// This single line turns off all security blockers so your frontend can connect easily.
 app.use(cors());
 app.use(express.json());
 
-// Initialize AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-
-// The Vibe Check Route
 app.post('/vibe-check', async (req, res) => {
     try {
+        // 1. Safe Check for API Keys before doing anything
+        if (!process.env.GEMINI_API_KEY) {
+            return res.status(500).json({ error: "Server missing GEMINI_API_KEY" });
+        }
+        if (!process.env.OPENSEA_API_KEY) {
+            return res.status(500).json({ error: "Server missing OPENSEA_API_KEY" });
+        }
+
         const { collection_slug } = req.body;
         if (!collection_slug) return res.status(400).json({ error: "Missing collection_slug" });
 
-        // Fetch OpenSea Data
+        // 2. Fetch OpenSea Data
         const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${collection_slug}`, {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
         });
 
         if (!osResponse.ok) return res.status(404).json({ error: "Collection not found on OpenSea" });
         const osData = await osResponse.json();
+
+        // 3. Initialize AI only when a request comes in
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
         const prompt = `
             You are a brutal Web3 Alpha Group Analyst. Analyze this project:
