@@ -1,9 +1,25 @@
+const express = require('express');
+const cors = require('cors');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// 1. Open CORS Configuration (Accepts requests from anywhere)
+app.use(cors());
+app.use(express.json());
+
+// 2. Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+
+// 3. Vibe Check Route
 app.post('/vibe-check', async (req, res) => {
     try {
         const { collection_slug } = req.body;
         if (!collection_slug) return res.status(400).json({ error: "Missing collection_slug" });
 
-        // Fetch collection details from OpenSea API v2
+        // Fetch data from OpenSea
         const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${collection_slug}`, {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
         });
@@ -21,15 +37,16 @@ app.post('/vibe-check', async (req, res) => {
             Do not include markdown or backticks.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
-            contents: prompt,
-        });
-
-        const resultData = JSON.parse(response.text.replace(/```json|```/g, '').trim());
+        const result = await ai.generateContent(prompt);
+        const responseText = result.response.text();
+        const resultData = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+        
         res.json(resultData);
 
     } catch (error) {
+        console.error("Backend Error:", error);
         res.status(500).json({ error: "Failed to process check", details: error.message });
     }
 });
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
