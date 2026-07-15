@@ -11,7 +11,7 @@ function App() {
     setResult(null)
     try {
       // REPLACE THIS URL WITH YOUR LIVE RAILWAY URL
-      const response = await fetch('YOUR_RAILWAY_URL_HERE/vibe-check', {
+      const response = await fetch('https://fabulous-alignment-production-1016.up.railway.app/vibe-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ collection_slug: slug })
