@@ -33,7 +33,7 @@ app.post('/vibe-check', async (req, res) => {
                 role: "user", 
                 content: `Analyze NFT: ${osData.name || finalSlug}. Return valid JSON with vibe_score (0-100), vibe_label, collector_take (2 sentences), and flags (array).` 
             }],
-            model: "llama3-8b-8192",
+            model: "llama-3.1-8b-instant",
             response_format: { type: "json_object" }
         });
 
