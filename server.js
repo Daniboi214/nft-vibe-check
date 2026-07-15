@@ -5,21 +5,21 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 1. Open CORS Configuration (Accepts requests from anywhere)
+// This single line turns off all security blockers so your frontend can connect easily.
 app.use(cors());
 app.use(express.json());
 
-// 2. Initialize Gemini
+// Initialize AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const ai = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
-// 3. Vibe Check Route
+// The Vibe Check Route
 app.post('/vibe-check', async (req, res) => {
     try {
         const { collection_slug } = req.body;
         if (!collection_slug) return res.status(400).json({ error: "Missing collection_slug" });
 
-        // Fetch data from OpenSea
+        // Fetch OpenSea Data
         const osResponse = await fetch(`https://api.opensea.io/api/v2/collections/${collection_slug}`, {
             headers: { 'x-api-key': process.env.OPENSEA_API_KEY }
         });
