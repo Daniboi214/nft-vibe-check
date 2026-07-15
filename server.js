@@ -36,7 +36,6 @@ app.post('/vibe-check', async (req, res) => {
         
         osData = await osResponse.json(); 
 
-        // Initialize with the correct, active high-capacity model
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const ai = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
@@ -85,3 +84,6 @@ app.post('/vibe-check', async (req, res) => {
             ]
         });
     }
+});
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
