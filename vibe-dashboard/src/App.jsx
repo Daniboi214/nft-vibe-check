@@ -10,7 +10,7 @@ function App() {
     setResult(null)
     try {
       // REPLACE 'YOUR_RAILWAY_URL_HERE' WITH YOUR ACTUAL URL!
-      const response = await fetch('fabulous-alignment-production-1016.up.railway.app/vibe-check', {
+      const response = await fetch('https://fabulous-alignment-production-1016.up.railway.app/vibe-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ collection_slug: slug })
