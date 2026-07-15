@@ -46,7 +46,7 @@ app.post('/vibe-check', async (req, res) => {
             "vibe_score": an integer from 0-100 reflecting the project's overall development, clarity of purpose, and available features based on the description.
             "vibe_label": a concise, objective label (e.g., "Established Ecosystem", "Art-Focused Collection", "Developing Utility", "Unclear Scope").
             "collector_take": A detailed 4 to 5 sentence objective analysis. Evaluate what the project offers, its thematic or technical focus, and its apparent goals. Keep the language clear, descriptive, and strictly analytical.
-            "flags": an array of exactly 4 objective observations regarding the project's traits, roadmap, or available data (e.g., "Clear utility outlined", "Description lacks specific details", "Strong focus on generative art", "Community roadmap specified").
+            "flags": an array of exactly 4 unique, collection-specific objective observations. DO NOT copy these examples. You MUST write new, custom flags based specifically on the actual description and name of ${osData.name || finalSlug} (e.g., if the description mentions gaming, flag the gaming utility; if it is blank, flag the lack of documentation).
         `;
 
         const completion = await groq.chat.completions.create({
